@@ -1,0 +1,5 @@
+{
+  "name": "GSA Flyer Designer",
+  "description": "Un outil de visualisation pour le flyer 3-plis de Garage Service Auto (GSA), incluant les deux faces (recto/verso) avec une mise en page professionnelle A4 paysage.",
+  "requestFramePermissions": []
+}
