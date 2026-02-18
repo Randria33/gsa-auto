@@ -309,7 +309,8 @@ const ServiceModal = ({ service, onClose }: { service: ServiceDetail | null, onC
                 'pieces-detachees.jpg': 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?q=80&w=800&auto=format&fit=crop',
                 'location-utilitaire.jpg': 'https://images.unsplash.com/photo-1606206591513-adbf01ac2cee?q=80&w=800&auto=format&fit=crop',
                 'service-premium.jpg': 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?q=80&w=800&auto=format&fit=crop',
-                'sprinter.jpg': 'https://images.unsplash.com/photo-1527450133-0e7c49020e6a?q=80&w=800&auto=format&fit=crop'
+                'sprinter.jpg': 'https://images.unsplash.com/photo-1527450133-0e7c49020e6a?q=80&w=800&auto=format&fit=crop',
+            'pont.png': 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=800&auto=format&fit=crop'
               };
               const filename = service.img.split('/').pop() || '';
               e.currentTarget.src = fallbacks[filename] || 'https://placehold.co/800x600?text=' + encodeURIComponent(service.title);
@@ -362,43 +363,21 @@ const ServiceModal = ({ service, onClose }: { service: ServiceDetail | null, onC
                   <Phone size={20} />
                   <span className="font-bold">06 77 34 36 73</span>
                 </a>
-                <a href="#contact" onClick={onClose} className="flex items-center gap-3 bg-white text-red-600 px-4 py-3 rounded-xl hover:bg-slate-50 transition-all font-black uppercase text-sm justify-center">
-                  Demander un Devis
-                  <ArrowRight size={16} />
-                </a>
+                {service.title === "SELF-GARAGE" ? (
+                  <a href="/reservation-self-garage" className="flex items-center gap-3 bg-white text-red-600 px-4 py-3 rounded-xl hover:bg-slate-50 transition-all font-black uppercase text-sm justify-center">
+                    <Calendar size={16} />
+                    Réserver en Ligne
+                    <ArrowRight size={16} />
+                  </a>
+                ) : (
+                  <a href="#contact" onClick={onClose} className="flex items-center gap-3 bg-white text-red-600 px-4 py-3 rounded-xl hover:bg-slate-50 transition-all font-black uppercase text-sm justify-center">
+                    Demander un Devis
+                    <ArrowRight size={16} />
+                  </a>
+                )}
               </div>
             </div>
           </div>
-
-          {/* Galerie d'images pour SELF-GARAGE */}
-          {service.title === "SELF-GARAGE" && (
-            <div className="mb-8">
-              <h3 className="text-xl font-black uppercase mb-4 flex items-center gap-2">
-                <Car className="text-red-600" size={24} />
-                Nos Équipements
-              </h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="bg-white rounded-xl overflow-hidden border-2 border-slate-100 hover:border-red-600 transition-all">
-                  <img src="image/logo-gsa.png" alt="GSA Logo" className="w-full h-40 object-contain p-4 bg-slate-50" onError={(e) => e.currentTarget.src = 'https://placehold.co/400x300?text=GSA'} />
-                  <div className="p-3 text-center bg-white">
-                    <p className="font-black text-sm text-slate-900 uppercase">Garage Service Auto</p>
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl overflow-hidden border-2 border-slate-100 hover:border-red-600 transition-all">
-                  <img src="image/sprinter.jpg" alt="Mercedes Sprinter" className="w-full h-40 object-cover" onError={(e) => e.currentTarget.src = 'https://placehold.co/400x300?text=Sprinter'} />
-                  <div className="p-3 text-center bg-white">
-                    <p className="font-black text-sm text-slate-900 uppercase">Mercedes Sprinter</p>
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl overflow-hidden border-2 border-slate-100 hover:border-red-600 transition-all">
-                  <img src="image/trafic.jpg" alt="Renault Trafic" className="w-full h-40 object-cover" onError={(e) => e.currentTarget.src = 'https://placehold.co/400x300?text=Trafic'} />
-                  <div className="p-3 text-center bg-white">
-                    <p className="font-black text-sm text-slate-900 uppercase">Renault Trafic</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Prestations incluses */}
           <div className="mb-8">
@@ -452,7 +431,8 @@ const ServiceCard = ({ icon: Icon, title, desc, img, delay, onClick }: any) => (
             'pieces-detachees.jpg': 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?q=80&w=800&auto=format&fit=crop',
             'location-utilitaire.jpg': 'https://images.unsplash.com/photo-1606206591513-adbf01ac2cee?q=80&w=800&auto=format&fit=crop',
             'service-premium.jpg': 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?q=80&w=800&auto=format&fit=crop',
-            'sprinter.jpg': 'https://images.unsplash.com/photo-1527450133-0e7c49020e6a?q=80&w=800&auto=format&fit=crop'
+            'sprinter.jpg': 'https://images.unsplash.com/photo-1527450133-0e7c49020e6a?q=80&w=800&auto=format&fit=crop',
+            'pont.png': 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=800&auto=format&fit=crop'
           };
           const filename = img.split('/').pop() || '';
           e.currentTarget.src = fallbacks[filename] || 'https://placehold.co/800x600?text=' + encodeURIComponent(title);
@@ -683,7 +663,7 @@ const App: React.FC = () => {
       title: "SELF-GARAGE",
       icon: Settings,
       description: "Location de pont + outillages standard",
-      img: "image/sprinter.jpg",
+      img: "image/pont.png",
       pricing: "À partir de 35€/heure",
       duration: "Tarif dégressif",
       features: [
