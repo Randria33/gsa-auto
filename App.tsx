@@ -611,7 +611,7 @@ const App: React.FC = () => {
       title: "Location Utilitaire",
       icon: Truck,
       description: "Sprinter et Trafic disponibles",
-      img: "image/location-utilitaire.jpg",
+      img: "image/sprinter.jpg",
       pricing: "À partir de 60€/jour",
       duration: "De 1 jour à plusieurs semaines",
       features: [
@@ -963,8 +963,8 @@ const App: React.FC = () => {
                 onError={(e) => e.currentTarget.src = 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?q=80&w=800&auto=format&fit=crop'}
               />
               <img
-                src="image/atelier-2.jpg"
-                alt="Équipe GSA"
+                src="image/mecanicien.png"
+                alt="Mécanicien GSA"
                 className="rounded-2xl shadow-xl object-cover h-64 w-full mt-8"
                 onError={(e) => e.currentTarget.src = 'https://images.unsplash.com/photo-1632823469621-d1b8fe0b9002?q=80&w=800&auto=format&fit=crop'}
               />
