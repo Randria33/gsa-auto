@@ -369,6 +369,12 @@ const ServiceModal = ({ service, onClose }: { service: ServiceDetail | null, onC
                     Réserver en Ligne
                     <ArrowRight size={16} />
                   </a>
+                ) : service.title === "Location Utilitaire" ? (
+                  <a href="/tarifs-location-utilitaire" className="flex items-center gap-3 bg-white text-red-600 px-4 py-3 rounded-xl hover:bg-slate-50 transition-all font-black uppercase text-sm justify-center">
+                    <Truck size={16} />
+                    Consulter les Tarifs
+                    <ArrowRight size={16} />
+                  </a>
                 ) : (
                   <a href="#contact" onClick={onClose} className="flex items-center gap-3 bg-white text-red-600 px-4 py-3 rounded-xl hover:bg-slate-50 transition-all font-black uppercase text-sm justify-center">
                     Demander un Devis

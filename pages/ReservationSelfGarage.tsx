@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
-import { Calendar, Clock, User, Mail, Phone, Euro, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Elements } from '@stripe/react-stripe-js';
+import { Calendar, Clock, User, Mail, Phone, Euro, ArrowLeft, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
+import { stripePromise } from '../lib/stripe';
+import StripeCheckoutForm from '../components/StripeCheckoutForm';
+
+type Step = 'form' | 'payment' | 'success';
 
 const ReservationSelfGarage: React.FC = () => {
+  const [currentStep, setCurrentStep] = useState<Step>('form');
   const [formData, setFormData] = useState({
     nom: '',
     prenom: '',
@@ -13,8 +19,9 @@ const ReservationSelfGarage: React.FC = () => {
     message: ''
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Calcul du tarif avec dégressivité
   const calculerTarif = (duree: number) => {
@@ -26,49 +33,47 @@ const ReservationSelfGarage: React.FC = () => {
 
   const tarif = calculerTarif(parseInt(formData.duree) || 0);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setError(null);
+    setIsCreatingPayment(true);
 
     try {
-      // Simulation de l'envoi - À remplacer par votre API
-      const response = await fetch('/api/reservation-self-garage', {
+      // Appel API pour créer le PaymentIntent
+      const response = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...formData,
-          tarif,
+          amount: tarif * 100, // Stripe utilise les centimes
+          currency: 'eur',
+          reservationData: formData,
           service: 'SELF-GARAGE'
         }),
       });
 
-      if (response.ok) {
-        setSubmitStatus('success');
-        // Réinitialiser le formulaire après 3 secondes
-        setTimeout(() => {
-          setFormData({
-            nom: '',
-            prenom: '',
-            email: '',
-            telephone: '',
-            date: '',
-            heureDebut: '08:00',
-            duree: '2',
-            message: ''
-          });
-          setSubmitStatus('idle');
-        }, 3000);
-      } else {
-        setSubmitStatus('error');
+      if (!response.ok) {
+        throw new Error('Erreur lors de la création du paiement');
       }
-    } catch (error) {
-      console.error('Erreur lors de la réservation:', error);
-      setSubmitStatus('error');
+
+      const data = await response.json();
+      setClientSecret(data.clientSecret);
+      setCurrentStep('payment');
+    } catch (err) {
+      console.error('Erreur:', err);
+      setError(err instanceof Error ? err.message : 'Erreur lors de la création du paiement');
     } finally {
-      setIsSubmitting(false);
+      setIsCreatingPayment(false);
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    setCurrentStep('success');
+  };
+
+  const handlePaymentError = (errorMessage: string) => {
+    setError(errorMessage);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -97,217 +102,309 @@ const ReservationSelfGarage: React.FC = () => {
         </div>
       </div>
 
+      {/* Indicateur d'étapes */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-5xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-center gap-4">
+            <div className={`flex items-center gap-2 ${currentStep === 'form' ? 'text-red-600' : currentStep === 'payment' || currentStep === 'success' ? 'text-green-600' : 'text-slate-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black ${currentStep === 'form' ? 'bg-red-600 text-white' : currentStep === 'payment' || currentStep === 'success' ? 'bg-green-600 text-white' : 'bg-slate-200'}`}>
+                {currentStep === 'payment' || currentStep === 'success' ? '✓' : '1'}
+              </div>
+              <span className="font-bold text-sm uppercase hidden md:inline">Informations</span>
+            </div>
+            <div className="h-0.5 w-16 bg-slate-200"></div>
+            <div className={`flex items-center gap-2 ${currentStep === 'payment' ? 'text-red-600' : currentStep === 'success' ? 'text-green-600' : 'text-slate-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black ${currentStep === 'payment' ? 'bg-red-600 text-white' : currentStep === 'success' ? 'bg-green-600 text-white' : 'bg-slate-200'}`}>
+                {currentStep === 'success' ? '✓' : '2'}
+              </div>
+              <span className="font-bold text-sm uppercase hidden md:inline">Paiement</span>
+            </div>
+            <div className="h-0.5 w-16 bg-slate-200"></div>
+            <div className={`flex items-center gap-2 ${currentStep === 'success' ? 'text-green-600' : 'text-slate-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black ${currentStep === 'success' ? 'bg-green-600 text-white' : 'bg-slate-200'}`}>
+                3
+              </div>
+              <span className="font-bold text-sm uppercase hidden md:inline">Confirmation</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Contenu principal */}
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="grid md:grid-cols-3 gap-8">
-          {/* Formulaire */}
+          {/* Contenu principal - Formulaire ou Paiement */}
           <div className="md:col-span-2">
             <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h2 className="text-2xl font-black uppercase mb-6 flex items-center gap-2">
-                <Calendar className="text-red-600" size={28} />
-                Formulaire de Réservation
-              </h2>
+              {/* ÉTAPE 1 : Formulaire */}
+              {currentStep === 'form' && (
+                <>
+                  <h2 className="text-2xl font-black uppercase mb-6 flex items-center gap-2">
+                    <Calendar className="text-red-600" size={28} />
+                    Formulaire de Réservation
+                  </h2>
 
-              {submitStatus === 'success' && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
-                  <CheckCircle className="text-green-600" size={24} />
-                  <div>
-                    <p className="font-bold text-green-900">Réservation envoyée !</p>
-                    <p className="text-sm text-green-700">Nous vous contacterons sous 24h pour confirmer.</p>
-                  </div>
-                </div>
-              )}
-
-              {submitStatus === 'error' && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
-                  <AlertCircle className="text-red-600" size={24} />
-                  <div>
-                    <p className="font-bold text-red-900">Erreur d'envoi</p>
-                    <p className="text-sm text-red-700">Veuillez réessayer ou nous appeler au 06 77 34 36 73</p>
-                  </div>
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Informations personnelles */}
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-black uppercase text-slate-700 mb-2">
-                      Nom *
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                      <input
-                        type="text"
-                        name="nom"
-                        value={formData.nom}
-                        onChange={handleChange}
-                        required
-                        className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none"
-                        placeholder="Votre nom"
-                      />
+                  {error && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+                      <AlertCircle className="text-red-600" size={24} />
+                      <div>
+                        <p className="font-bold text-red-900">Erreur</p>
+                        <p className="text-sm text-red-700">{error}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-black uppercase text-slate-700 mb-2">
-                      Prénom *
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                      <input
-                        type="text"
-                        name="prenom"
-                        value={formData.prenom}
-                        onChange={handleChange}
-                        required
-                        className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none"
-                        placeholder="Votre prénom"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-black uppercase text-slate-700 mb-2">
-                      Email *
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                        className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none"
-                        placeholder="votre@email.com"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-black uppercase text-slate-700 mb-2">
-                      Téléphone *
-                    </label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                      <input
-                        type="tel"
-                        name="telephone"
-                        value={formData.telephone}
-                        onChange={handleChange}
-                        required
-                        className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none"
-                        placeholder="06 XX XX XX XX"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Date et horaires */}
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-black uppercase text-slate-700 mb-2">
-                      Date *
-                    </label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                      <input
-                        type="date"
-                        name="date"
-                        value={formData.date}
-                        onChange={handleChange}
-                        required
-                        min={new Date().toISOString().split('T')[0]}
-                        className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-black uppercase text-slate-700 mb-2">
-                      Heure de début *
-                    </label>
-                    <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                      <select
-                        name="heureDebut"
-                        value={formData.heureDebut}
-                        onChange={handleChange}
-                        required
-                        className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none appearance-none"
-                      >
-                        <option value="08:00">08:00</option>
-                        <option value="09:00">09:00</option>
-                        <option value="10:00">10:00</option>
-                        <option value="11:00">11:00</option>
-                        <option value="12:00">12:00</option>
-                        <option value="13:00">13:00</option>
-                        <option value="14:00">14:00</option>
-                        <option value="15:00">15:00</option>
-                        <option value="16:00">16:00</option>
-                        <option value="17:00">17:00</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-black uppercase text-slate-700 mb-2">
-                      Durée (heures) *
-                    </label>
-                    <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                      <select
-                        name="duree"
-                        value={formData.duree}
-                        onChange={handleChange}
-                        required
-                        className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none appearance-none"
-                      >
-                        <option value="1">1 heure</option>
-                        <option value="2">2 heures</option>
-                        <option value="3">3 heures</option>
-                        <option value="4">4 heures</option>
-                        <option value="5">5 heures</option>
-                        <option value="6">6 heures</option>
-                        <option value="8">8 heures (journée)</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Message */}
-                <div>
-                  <label className="block text-sm font-black uppercase text-slate-700 mb-2">
-                    Détails de l'intervention (optionnel)
-                  </label>
-                  <textarea
-                    name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    rows={4}
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none resize-none"
-                    placeholder="Décrivez brièvement les travaux prévus..."
-                  />
-                </div>
-
-                {/* Bouton de soumission */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-red-600 text-white py-4 rounded-xl font-black uppercase tracking-wider hover:bg-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                      Envoi en cours...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle size={20} />
-                      Confirmer la Réservation
-                    </>
                   )}
-                </button>
-              </form>
+
+                  <form onSubmit={handleFormSubmit} className="space-y-6">
+                    {/* Informations personnelles */}
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-black uppercase text-slate-700 mb-2">
+                          Nom *
+                        </label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                          <input
+                            type="text"
+                            name="nom"
+                            value={formData.nom}
+                            onChange={handleChange}
+                            required
+                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none"
+                            placeholder="Votre nom"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-black uppercase text-slate-700 mb-2">
+                          Prénom *
+                        </label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                          <input
+                            type="text"
+                            name="prenom"
+                            value={formData.prenom}
+                            onChange={handleChange}
+                            required
+                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none"
+                            placeholder="Votre prénom"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-black uppercase text-slate-700 mb-2">
+                          Email *
+                        </label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                          <input
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            required
+                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none"
+                            placeholder="votre@email.com"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-black uppercase text-slate-700 mb-2">
+                          Téléphone *
+                        </label>
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                          <input
+                            type="tel"
+                            name="telephone"
+                            value={formData.telephone}
+                            onChange={handleChange}
+                            required
+                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none"
+                            placeholder="06 XX XX XX XX"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Date et horaires */}
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-black uppercase text-slate-700 mb-2">
+                          Date *
+                        </label>
+                        <div className="relative">
+                          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                          <input
+                            type="date"
+                            name="date"
+                            value={formData.date}
+                            onChange={handleChange}
+                            required
+                            min={new Date().toISOString().split('T')[0]}
+                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-black uppercase text-slate-700 mb-2">
+                          Heure de début *
+                        </label>
+                        <div className="relative">
+                          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                          <select
+                            name="heureDebut"
+                            value={formData.heureDebut}
+                            onChange={handleChange}
+                            required
+                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none appearance-none"
+                          >
+                            <option value="08:00">08:00</option>
+                            <option value="09:00">09:00</option>
+                            <option value="10:00">10:00</option>
+                            <option value="11:00">11:00</option>
+                            <option value="12:00">12:00</option>
+                            <option value="13:00">13:00</option>
+                            <option value="14:00">14:00</option>
+                            <option value="15:00">15:00</option>
+                            <option value="16:00">16:00</option>
+                            <option value="17:00">17:00</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-black uppercase text-slate-700 mb-2">
+                          Durée (heures) *
+                        </label>
+                        <div className="relative">
+                          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                          <select
+                            name="duree"
+                            value={formData.duree}
+                            onChange={handleChange}
+                            required
+                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none appearance-none"
+                          >
+                            <option value="1">1 heure</option>
+                            <option value="2">2 heures</option>
+                            <option value="3">3 heures</option>
+                            <option value="4">4 heures</option>
+                            <option value="5">5 heures</option>
+                            <option value="6">6 heures</option>
+                            <option value="8">8 heures (journée)</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Message */}
+                    <div>
+                      <label className="block text-sm font-black uppercase text-slate-700 mb-2">
+                        Détails de l'intervention (optionnel)
+                      </label>
+                      <textarea
+                        name="message"
+                        value={formData.message}
+                        onChange={handleChange}
+                        rows={4}
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-600 focus:border-transparent outline-none resize-none"
+                        placeholder="Décrivez brièvement les travaux prévus..."
+                      />
+                    </div>
+
+                    {/* Bouton de soumission */}
+                    <button
+                      type="submit"
+                      disabled={isCreatingPayment}
+                      className="w-full bg-red-600 text-white py-4 rounded-xl font-black uppercase tracking-wider hover:bg-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isCreatingPayment ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                          Préparation du paiement...
+                        </>
+                      ) : (
+                        <>
+                          Continuer vers le Paiement
+                          <ArrowRight size={20} />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </>
+              )}
+
+              {/* ÉTAPE 2 : Paiement */}
+              {currentStep === 'payment' && clientSecret && (
+                <>
+                  <h2 className="text-2xl font-black uppercase mb-6 flex items-center gap-2">
+                    <Euro className="text-red-600" size={28} />
+                    Paiement Sécurisé
+                  </h2>
+
+                  <Elements stripe={stripePromise} options={{ clientSecret }}>
+                    <StripeCheckoutForm
+                      amount={tarif}
+                      onSuccess={handlePaymentSuccess}
+                      onError={handlePaymentError}
+                      clientSecret={clientSecret}
+                    />
+                  </Elements>
+
+                  <button
+                    onClick={() => setCurrentStep('form')}
+                    className="mt-6 text-slate-600 hover:text-slate-900 flex items-center gap-2 text-sm font-bold"
+                  >
+                    <ArrowLeft size={16} />
+                    Retour aux informations
+                  </button>
+                </>
+              )}
+
+              {/* ÉTAPE 3 : Confirmation */}
+              {currentStep === 'success' && (
+                <div className="text-center py-12">
+                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle className="text-green-600" size={48} />
+                  </div>
+                  <h2 className="text-3xl font-black uppercase mb-4">Réservation Confirmée !</h2>
+                  <p className="text-slate-600 mb-8 max-w-md mx-auto">
+                    Votre paiement a été accepté et votre réservation est confirmée.
+                    Vous allez recevoir un email de confirmation à <strong>{formData.email}</strong> avec tous les détails.
+                  </p>
+                  <div className="bg-slate-50 rounded-xl p-6 max-w-md mx-auto mb-8">
+                    <h3 className="font-black uppercase text-sm mb-4">Récapitulatif</h3>
+                    <div className="space-y-2 text-sm text-left">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Date :</span>
+                        <span className="font-bold">{new Date(formData.date).toLocaleDateString('fr-FR')}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Heure :</span>
+                        <span className="font-bold">{formData.heureDebut}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Durée :</span>
+                        <span className="font-bold">{formData.duree}h</span>
+                      </div>
+                      <div className="flex justify-between pt-3 border-t border-slate-200">
+                        <span className="text-slate-600">Total payé :</span>
+                        <span className="text-xl font-black text-green-600">{tarif}€</span>
+                      </div>
+                    </div>
+                  </div>
+                  <a
+                    href="/"
+                    className="inline-flex items-center gap-2 bg-red-600 text-white px-8 py-4 rounded-xl font-black uppercase tracking-wider hover:bg-red-700 transition-all"
+                  >
+                    <ArrowLeft size={20} />
+                    Retour à l'accueil
+                  </a>
+                </div>
+              )}
             </div>
           </div>
 
@@ -349,7 +446,7 @@ const ReservationSelfGarage: React.FC = () => {
                 </div>
               </div>
               <p className="text-xs text-white/80 mt-4">
-                * Tarif indicatif. Confirmation par email après validation.
+                * Paiement en ligne sécurisé par Stripe
               </p>
             </div>
 
