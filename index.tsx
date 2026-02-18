@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import App from './App';
 import ReservationSelfGarage from './pages/ReservationSelfGarage';
 import TarifsLocationUtilitaire from './pages/TarifsLocationUtilitaire';
+import LaisserAvis from './pages/LaisserAvis';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -19,6 +20,7 @@ root.render(
         <Route path="/" element={<App />} />
         <Route path="/reservation-self-garage" element={<ReservationSelfGarage />} />
         <Route path="/tarifs-location-utilitaire" element={<TarifsLocationUtilitaire />} />
+        <Route path="/laisser-avis" element={<LaisserAvis />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

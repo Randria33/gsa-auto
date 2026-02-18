@@ -1193,9 +1193,9 @@ const App: React.FC = () => {
               <p className="text-white/80 mb-6 max-w-2xl mx-auto">
                 Vous avez utilisé nos services ? Partagez votre expérience pour aider d'autres clients et nous permettre de progresser.
               </p>
-              <button className="bg-white text-red-600 px-8 py-4 rounded-xl font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-xl">
+              <a href="/laisser-avis" className="inline-block bg-white text-red-600 px-8 py-4 rounded-xl font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-xl">
                 Laisser un Avis
-              </button>
+              </a>
             </div>
           </div>
         </div>
