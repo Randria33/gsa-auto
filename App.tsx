@@ -58,7 +58,7 @@ const Navbar = () => {
     <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md py-3' : 'bg-transparent py-5'}`}>
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <img src="image/logo-gsa.png" alt="GSA Logo" className="h-10 object-contain" onError={(e) => e.currentTarget.src = 'https://placehold.co/100x40?text=GSA'} />
+          <img src="/image/logo-gsa.png" alt="GSA Logo" className="h-10 object-contain" onError={(e) => e.currentTarget.src = 'https://placehold.co/100x40?text=GSA'} />
         </div>
 
         {/* Desktop Menu */}
@@ -868,7 +868,7 @@ const App: React.FC = () => {
           <div className="hidden md:flex justify-center animate-slideInRight">
             <div className="relative group">
                 <div className="absolute -inset-4 bg-red-600/20 rounded-[40px] blur-2xl group-hover:bg-red-600/40 transition-all"></div>
-                <img src="image/logo-gsa.png" alt="GSA Large" className="relative h-64 object-contain drop-shadow-2xl animate-float" onError={(e) => e.currentTarget.src = 'https://placehold.co/400x400?text=GSA'} />
+                <img src="/image/logo-gsa.png" alt="GSA Large" className="relative h-64 object-contain drop-shadow-2xl animate-float" onError={(e) => e.currentTarget.src = 'https://placehold.co/400x400?text=GSA'} />
             </div>
           </div>
         </div>
@@ -1352,7 +1352,7 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-12 mb-20">
             <div className="space-y-6 col-span-1 md:col-span-2">
-               <img src="image/logo-gsa.png" alt="GSA" className="h-12 object-contain" onError={(e) => e.currentTarget.src = 'https://placehold.co/200x60?text=GSA'} />
+               <img src="/image/logo-gsa.png" alt="GSA" className="h-12 object-contain" onError={(e) => e.currentTarget.src = 'https://placehold.co/200x60?text=GSA'} />
                <p className="text-slate-400 max-w-sm">
                   Depuis plus de 3 ans, Garage Service Auto (GSA) est votre partenaire de confiance à Pont-Sainte-Marie pour une mobilité sans soucis.
                </p>
