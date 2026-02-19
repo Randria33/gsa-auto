@@ -55,7 +55,10 @@ const Navbar = () => {
   }, []);
 
   return (
-    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md py-3' : 'bg-transparent py-5'}`}>
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-slate-900 shadow-2xl py-3' : 'bg-slate-900/95 backdrop-blur-sm py-4'}`}>
+      {/* Barre rouge supérieure */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-red-500 to-red-600"></div>
+
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <img src="image/logo-gsa.png" alt="GSA Logo" className="h-10 object-contain" onError={(e) => e.currentTarget.src = 'https://placehold.co/100x40?text=GSA'} />
@@ -64,7 +67,7 @@ const Navbar = () => {
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-8">
           {['Accueil', 'Services', 'À Propos', 'Occasions', 'Location', 'Témoignages', 'Contact'].map((item) => (
-            <a key={item} href={`#${item.toLowerCase().replace(/\s+/g, '-').replace('à', 'a')}`} className={`text-sm font-bold uppercase tracking-widest hover:text-red-600 transition-colors ${isScrolled ? 'text-slate-900' : 'text-white'}`}>
+            <a key={item} href={`#${item.toLowerCase().replace(/\s+/g, '-').replace('à', 'a')}`} className="text-sm font-bold uppercase tracking-widest text-white hover:text-red-500 transition-colors">
               {item}
             </a>
           ))}
@@ -74,16 +77,16 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Toggle */}
-        <button className="md:hidden text-red-600" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+        <button className="md:hidden text-white hover:text-red-500 transition-colors" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
           {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
       </div>
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
-        <div className="absolute top-full left-0 w-full bg-white shadow-xl md:hidden flex flex-col p-6 gap-4 border-t border-slate-100 animate-fadeIn">
+        <div className="absolute top-full left-0 w-full bg-slate-900 shadow-xl md:hidden flex flex-col p-6 gap-4 border-t border-red-600/30 animate-fadeIn">
           {['Accueil', 'Services', 'À Propos', 'Occasions', 'Location', 'Témoignages', 'Contact'].map((item) => (
-            <a key={item} href={`#${item.toLowerCase().replace(/\s+/g, '-').replace('à', 'a')}`} onClick={() => setMobileMenuOpen(false)} className="text-lg font-black text-slate-900 uppercase tracking-tighter border-b border-slate-50 pb-2 hover:text-red-600 transition-colors">
+            <a key={item} href={`#${item.toLowerCase().replace(/\s+/g, '-').replace('à', 'a')}`} onClick={() => setMobileMenuOpen(false)} className="text-lg font-black text-white uppercase tracking-tighter border-b border-slate-800 pb-2 hover:text-red-500 transition-colors">
               {item}
             </a>
           ))}
